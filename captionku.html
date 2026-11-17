@@ -297,7 +297,36 @@ footer { margin-top: 64px; padding-top: 20px; border-top: 1.5px solid var(--line
     <p>Pemeriksa klaim hanya pengingat awal dan bukan nasihat hukum.</p>
   </footer>
 </div>
-
+<script>
+  window.claude = {
+    use: function () {
+      return Promise.resolve({
+        json: function (prompt, opts) {
+          return fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt: prompt }),
+            signal: opts && opts.signal,
+          })
+            .then(function (r) {
+              return r.json().then(function (d) {
+                if (!r.ok) {
+                  var err = new Error(d.error || "Gagal");
+                  err.code = r.status === 429 ? "rate_limited" : "error";
+                  throw err;
+                }
+                return d;
+              });
+            })
+            .catch(function (e) {
+              if (e && e.name === "AbortError") e.code = "cancelled";
+              throw e;
+            });
+        },
+      });
+    },
+  };
+</script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
